@@ -132,13 +132,13 @@ namespace FASTER
         #region EVENTS
         private void MetroWindow_Initialized(object sender, EventArgs e)
         {
-            if (CheckAdmin())
+            if (true) //CheckAdmin())
             {
                 Functions.CheckSettings();
                 LoadServerProfiles();
             }
             else
-            { Close(); }
+            { } //Close(); }
         }
 
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
