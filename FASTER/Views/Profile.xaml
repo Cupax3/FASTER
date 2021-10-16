@@ -61,7 +61,7 @@
                                 <RowDefinition/>
                                 <RowDefinition Height="auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" Panel.ZIndex="1">
                                 <Button Margin="0, 5" Style="{StaticResource MahApps.Styles.Button.MetroSquare.Accent}" BorderThickness="0" Padding="5,3" Click="LoadFromFile_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <iconPacks:PackIconModern Kind="PageXml"/>
@@ -81,13 +81,35 @@
                                         <TextBlock Text="Clear Keys" Margin="10,0" />
                                     </StackPanel>
                                 </Button>
-                                <StackPanel Orientation="Horizontal">
-                                    <CheckBox IsChecked="{Binding Profile.ContactDLCChecked}" Content="Contact DLC" Margin="10,3"/>
-                                    <CheckBox IsChecked="{Binding Profile.GMDLCChecked}" Content="GM DLC" Margin="10,3"/>
-                                </StackPanel>
+                                <Canvas>
+                                    <Expander Header="DLCs" Margin="3"
+                                              mah:ControlsHelper.ContentCharacterCasing="Normal"
+                                              Background="{Binding Mode=OneWay, Source={StaticResource MahApps.Brushes.Menu.Background}}">
+                                        <StackPanel Orientation="Vertical">
+                                            <CheckBox IsChecked="{Binding Profile.ContactDLCChecked}"
+                                                      Content="Contact DLC" Margin="10,3" Width="105" />
+                                            <CheckBox IsChecked="{Binding Profile.GMDLCChecked}" Content="GM DLC"
+                                                      Margin="10,3" />
+                                            <CheckBox IsChecked="{Binding Profile.PFDLCChecked}"
+                                                      Content="Prairie Fire DLC" Margin="10,3" Width="105" />
+                                            <CheckBox IsChecked="{Binding Profile.CLSADLCChecked}" Content="CLSA DLC"
+                                                      Margin="10,3" />
+                                        </StackPanel>
+                                    </Expander>
+                                </Canvas>
                             </StackPanel>
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding Path=Profile.ProfileMods, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserReorderColumns="False" CanUserSortColumns="True" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding Path=Profile.ProfileMods, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" CanUserReorderColumns="False" CanUserSortColumns="True" AutoGenerateColumns="False" CanUserAddRows="False">
                                 <DataGrid.Resources>
+
+                                    <ContextMenu x:Key="LoadContextMenu">
+                                        <MenuItem Tag="Server" Header="Clear Load Order" Click="ClearModOrder">
+                                            <MenuItem.Icon>
+                                                <iconPacks:PackIconModern Kind="Clear" Margin="5" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+
+
                                     <ContextMenu x:Key="ServerContextMenu">
                                         <MenuItem Tag="Server" Header="Select All" Click="ModsSelectAll">
                                             <MenuItem.Icon>
@@ -157,37 +179,96 @@
 
                                     <Style TargetType="{x:Type DataGridColumnHeader}" BasedOn="{StaticResource MahApps.Styles.DataGridColumnHeader.Azure}">
                                         <Style.Triggers>
+                                            <Trigger Property="Content" Value="Load">
+                                                <Setter Property="ContextMenu" Value="{StaticResource LoadContextMenu}" />
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <ContentControl Content="{Binding}">
+                                                                <ToolTipService.ToolTip>
+                                                                    <ToolTip Content="Mod Load Priority" />
+                                                                </ToolTipService.ToolTip>
+                                                            </ContentControl>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
                                             <Trigger Property="Content" Value="Server">
                                                 <Setter Property="ContextMenu" Value="{StaticResource ServerContextMenu}" />
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <ContentControl Content="{Binding}">
+                                                                <ToolTipService.ToolTip>
+                                                                    <ToolTip Content="Mods loaded for Server only"/>
+                                                                </ToolTipService.ToolTip>
+                                                            </ContentControl>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
                                             </Trigger>
                                             <Trigger Property="Content" Value="Client">
                                                 <Setter Property="ContextMenu" Value="{StaticResource ClientContextMenu}" />
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <ContentControl Content="{Binding}">
+                                                                <ToolTipService.ToolTip>
+                                                                    <ToolTip Content="Mods used by the clients" />
+                                                                </ToolTipService.ToolTip>
+                                                            </ContentControl>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
                                             </Trigger>
                                             <Trigger Property="Content" Value="Headless">
                                                 <Setter Property="ContextMenu" Value="{StaticResource HeadlessContextMenu}" />
+                                                <Setter Property="ContentTemplate">
+                                                    <Setter.Value>
+                                                        <DataTemplate>
+                                                            <ContentControl Content="{Binding}">
+                                                                <ToolTipService.ToolTip>
+                                                                    <ToolTip Content="Mods loaded by the Headless Clients" />
+                                                                </ToolTipService.ToolTip>
+                                                            </ContentControl>
+                                                        </DataTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </DataGrid.Resources>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="auto" CanUserSort="True" IsReadOnly="True"/>
+                                    <DataGridTemplateColumn Header="Load" SortMemberPath="LoadPriority" Width="auto" IsReadOnly="False">
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate DataType="models:ProfileMod">
+                                                <mah:NumericUpDown Value="{Binding LoadPriority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HideUpDownButtons="True" Minimum="1" Maximum="65535" HorizontalAlignment="Center" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate DataType="models:ProfileMod">
+                                                <Label Content="{Binding LoadPriority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Server" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="models:ProfileMod">
                                                 <CheckBox IsChecked="{Binding ServerSideChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Client" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="models:ProfileMod">
                                                 <CheckBox IsChecked="{Binding ClientSideChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="Headless" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="models:ProfileMod">
                                                 <CheckBox IsChecked="{Binding HeadlessChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -261,7 +342,7 @@
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="Mission" Width="auto">
                                         <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="models:ProfileMission">
                                                 <CheckBox IsChecked="{Binding MissionChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>

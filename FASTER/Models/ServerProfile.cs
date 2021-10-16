@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Controls.Primitives;
 using System.Xml.Serialization;
 
@@ -49,13 +50,15 @@ namespace FASTER.Models
         private string _id;
         private string _name;
         private string _executable;
-        private int _port = 2302;
-        private int _headlessNum;
-        private bool _missionOverride;
-        private bool _contactDlcChecked;
-        private bool _gmDlcChecked;
-        private bool _enableHT = true;
-        private bool _enableRanking;
+        private int    _port = 2302;
+        private int    _headlessNum;
+        private bool   _missionOverride;
+        private bool   _contactDlcChecked;
+        private bool   _gmDlcChecked;
+        private bool   _pfDlcChecked;
+        private bool   _clsaDlcChecked;
+        private bool   _enableHT = true;
+        private bool   _enableRanking;
 
         private List<ProfileMod> _profileMods = new List<ProfileMod>();
         private ServerCfg _serverCfg;
@@ -145,6 +148,26 @@ namespace FASTER.Models
             {
                 _gmDlcChecked = value;
                 RaisePropertyChanged("GMDLCChecked");
+            }
+        }
+
+        public bool PFDLCChecked
+        {
+            get => _pfDlcChecked;
+            set
+            {
+                _pfDlcChecked = value;
+                RaisePropertyChanged("PFDLCChecked");
+            }
+        }
+
+        public bool CLSADLCChecked
+        {
+            get => _clsaDlcChecked;
+            set
+            {
+                _clsaDlcChecked = value;
+                RaisePropertyChanged("CLSADLCChecked");
             }
         }
 
@@ -269,6 +292,39 @@ namespace FASTER.Models
             return p;
         }
 
+        public string GetDlcAndPlayerMods(string playerMods)
+        {
+            StringBuilder mods = new StringBuilder();
+
+            if (ContactDLCChecked)
+            {
+                _ = mods.Append("contact;");
+            }
+
+            if (GMDLCChecked)
+            {
+                _ = mods.Append("gm;");
+            }
+
+            if (PFDLCChecked)
+            {
+                _ = mods.Append("vn;");
+            }
+
+            if (CLSADLCChecked)
+            {
+                _ = mods.Append("clsa;");
+            }
+
+            if (!string.IsNullOrWhiteSpace(playerMods))
+            {
+                _ = mods.Append($"{playerMods};");
+            }
+
+            return !string.IsNullOrWhiteSpace(mods.ToString()) ? $" \"-mod={mods}\"" : "";
+        }
+
+
         //This is used to trigger PropertyChanged to count each checked mod
         private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -287,12 +343,13 @@ namespace FASTER.Models
     [Serializable]
     public class ProfileMod : INotifyPropertyChanged
     {
-        private bool serverSideChecked;
-        private bool clientSideChecked;
-        private bool headlessChecked;
-        private bool isLocal;
-        private uint _id;
-        private string name;
+        private bool    serverSideChecked;
+        private bool    clientSideChecked;
+        private bool    headlessChecked;
+        private ushort? loadPriority;
+        private bool    isLocal;
+        private uint    _id;
+        private string  name;
 
         public bool ServerSideChecked
         {
@@ -325,6 +382,16 @@ namespace FASTER.Models
             }
         }
 
+        public ushort? LoadPriority
+        {
+            get => loadPriority;
+            set
+            {
+                loadPriority = value;
+                RaisePropertyChanged("LoadPriority");
+            }
+        }
+
         public uint Id
         {
             get => _id;
@@ -354,12 +421,12 @@ namespace FASTER.Models
             }
         }
 
+        public override string ToString()
+        { return $"{_id} {name}"; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void RaisePropertyChanged(string property)
-        {
-            if (PropertyChanged == null) return;
-            PropertyChanged(this, new PropertyChangedEventArgs(property));
-        }
+        { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property)); }
     }
 }
